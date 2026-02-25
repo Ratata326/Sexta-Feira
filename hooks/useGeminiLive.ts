@@ -10,6 +10,7 @@ const SAMPLE_RATE_OUTPUT = 24000;
 export const useGeminiLive = () => {
   const [status, setStatus] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
   const [outputAnalyser, setOutputAnalyser] = useState<AnalyserNode | null>(null);
+  const [groundingMetadata, setGroundingMetadata] = useState<any>(null);
 
   const inputContextRef = useRef<AudioContext | null>(null);
   const outputContextRef = useRef<AudioContext | null>(null);
@@ -56,6 +57,7 @@ export const useGeminiLive = () => {
     activeSessionRef.current = null;
 
     setOutputAnalyser(null);
+    setGroundingMetadata(null);
     if (!keepErrorStatus) {
       setStatus(ConnectionState.DISCONNECTED);
     }
@@ -75,6 +77,25 @@ export const useGeminiLive = () => {
       // Check for MediaDevices support
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Your browser environment does not support neural audio linking.");
+      }
+
+      // Get User Location for Maps Grounding
+      let locationConfig = {};
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        locationConfig = {
+          retrievalConfig: {
+            latLng: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }
+          }
+        };
+        console.log('[SYSTEM] Location acquired for tactical support.');
+      } catch (e) {
+        console.log('[SYSTEM] Location unavailable. Tactical map support limited.');
       }
 
       const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
@@ -123,6 +144,8 @@ export const useGeminiLive = () => {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: config.voiceName } },
           },
           systemInstruction: config.systemInstruction,
+          tools: [{ googleMaps: {} }, { googleSearch: {} }],
+          toolConfig: locationConfig
         },
         callbacks: {
           onopen: () => {
@@ -152,6 +175,13 @@ export const useGeminiLive = () => {
             }
             if (message.serverContent?.outputTranscription?.text) {
                 currentOutputRef.current += message.serverContent.outputTranscription.text;
+            }
+
+            // Handle Grounding Metadata (Maps)
+            const serverContent = message.serverContent as any;
+            if (serverContent?.groundingMetadata) {
+              console.log('[SYSTEM] Received tactical map data.');
+              setGroundingMetadata(serverContent.groundingMetadata);
             }
 
             if (message.serverContent?.turnComplete) {
@@ -230,5 +260,5 @@ export const useGeminiLive = () => {
     cleanup();
   }, [cleanup]);
 
-  return { status, connect, disconnect, outputAnalyser };
+  return { status, connect, disconnect, outputAnalyser, groundingMetadata };
 };
