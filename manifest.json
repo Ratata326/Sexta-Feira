@@ -1,0 +1,16 @@
+{
+  "short_name": "F.R.I.D.A.Y.",
+  "name": "F.R.I.D.A.Y. - AI Assistant",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/6104/6104446.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#020617",
+  "background_color": "#020617",
+  "orientation": "portrait"
+}

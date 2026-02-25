@@ -1,0 +1,7 @@
+{
+  "name": "Sexta-Feira - AI Assistant",
+  "description": "A sophisticated, real-time voice assistant powered by Gemini 2.5 Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
